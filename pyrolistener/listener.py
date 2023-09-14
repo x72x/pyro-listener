@@ -86,11 +86,11 @@ class Listener:
         )
         _cache[self.client.name][json.dumps(data, ensure_ascii=False)]=m
         if timeout:
-            stamp = timedelta(seconds=timeout)
+            stamp = (datetime.now() + timedelta(seconds=timeout))
         def ___(data, timeout):
             while data in _cache[self.client.name]['list']:
                 if timeout:
-                    if datetime.now().timestamp() > stamp:
+                    if datetime.now() > stamp:
                         raise TimeOut("Time out error")
                 sleep(0)
             # print(_cache_[f"{m.id}|{m.chat.id}"])
