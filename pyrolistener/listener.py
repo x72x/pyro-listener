@@ -44,7 +44,7 @@ class Listener:
         self,
         chat_id: int,
         text: str,
-        from_id: int = None,
+        from_id: Union[List[int], int] = None,
         protect_content: bool = None,
         reply_to_message_id: int = None,
         filters: List[str] = available_filters,
@@ -56,7 +56,7 @@ class Listener:
         """
         Args:
             chat_id (int): Chat ID
-            from_id (int, optional): Only listening from specific user or sender chat. Defaults to None.
+            from_id (List[int], int, optional): Only listening from specific ids or id ( User ID or Chat ID ). Defaults to None.
             text (str): The question.
             protect_content (bool, optional): Protect message content. Defaults to None.
             reply_to_message_id (int, optional): message to reply. Defaults to None.
@@ -87,31 +87,36 @@ class Listener:
         _cache[self.client.name][json.dumps(data, ensure_ascii=False)]=m
         if timeout:
             stamp = (datetime.now() + timedelta(seconds=timeout))
-        def ___(data, timeout):
+        def ___():
             while data in _cache[self.client.name]['list']:
                 if timeout:
                     if datetime.now() > stamp:
                         raise TimeOut("Time out error")
                 sleep(0)
-            # print(_cache_[f"{m.id}|{m.chat.id}"])
             return _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
-        return await self.client.loop.run_in_executor(None, ___, data, timeout)
+        return await self.client.loop.run_in_executor(None, ___)
 
     async def listen_to(self, m: Union[pyrogram.types.CallbackQuery, pyrogram.types.Message], text : str, *args, **kwargs):
         if isinstance(m, pyrogram.types.CallbackQuery):
             chat_id = m.message.chat.id
             from_id = m.from_user.id
+            reply_to_message_id = None
         elif isinstance(m, pyrogram.types.Message):
             chat_id = m.chat.id
             from_id = m.from_user.id
-        return await self.listen(chat_id=chat_id, from_id=from_id, text=text,*args, **kwargs)
+            reply_to_message_id = m.id
+        return await self.listen(chat_id=chat_id, from_id=from_id, text=text, reply_to_message_id=reply_to_message_id, *args, **kwargs)
 
     async def _handler(self, client: pyrogram.Client, message: pyrogram.types.Message):
             sender = message.sender_chat or message.from_user
             chat_id = message.chat.id
             __ = []
             for data in _cache[self.client.name]['list']:
-                if (data['chat_id'] == chat_id) and (data['from_id'] == sender.id):
+                if (data['chat_id'] == chat_id) and (
+                    (data["from_id"] is None) or (isinstance(data["from_id"], list) and sender.id in data["from_id"]) or (
+                        isinstance(data["from_id"], int) and data["from_id"] == sender.id
+                    )
+                ):
                     for _ in data["filters"]:
                         if getattr(message, _):
                             __.append(_)
