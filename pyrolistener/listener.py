@@ -43,7 +43,7 @@ class Listener:
     async def listen(
         self,
         chat_id: int,
-        text: str,
+        text: str = None,
         from_id: Union[List[int], int] = None,
         protect_content: bool = None,
         reply_to_message_id: int = None,
@@ -75,7 +75,8 @@ class Listener:
         }
         if data in _cache[self.client.name]['list']: _cache[self.client.name]['list'].remove(data)
         _cache[self.client.name]['list'].append(data)
-        m = await self.client.send_message(
+        if text:
+            m = await self.client.send_message(
                 chat_id=chat_id,
                 text=text,
                 reply_markup=reply_markup,
@@ -83,7 +84,9 @@ class Listener:
                 disable_web_page_preview=disable_web_page_preview,
                 protect_content=protect_content,
                 parse_mode=parse_mode,
-        )
+            )
+        else:
+            m = None
         _cache[self.client.name][json.dumps(data, ensure_ascii=False)]=m
         if timeout:
             stamp = (datetime.now() + timedelta(seconds=timeout))
