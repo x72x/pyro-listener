@@ -16,7 +16,7 @@
 
 ## Pyrolistener
 
-> Example
+> Message listener example
 
 ``` python
 from pyrogram import Client, filters, types, idle
@@ -36,6 +36,20 @@ async def _(c: Client, m: types.Message):
 print("run")
 idle()
 ```
+
+> callbackQuery listener example
+```python
+@app.on_callback_query()
+async def _(c: Client, query: types.CallbackQuery):
+    if query.data == "name":
+        msg = await listener.listen_to(
+            query,
+            "Whats Your name ?",
+            fiilters=["text"]
+        )
+        return await msg.reply(f"Your Name is {msg.text}")
+```
+
 
 ### Installing
 
