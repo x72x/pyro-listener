@@ -45,33 +45,41 @@ class Listener:
         chat_id: int,
         text: str = None,
         from_id: Union[List[int], int] = None,
+        filters: List[str] = available_filters,
+        filters_type: int = 1,
         protect_content: bool = None,
         reply_to_message_id: int = None,
-        filters: List[str] = available_filters,
         disable_web_page_preview: bool = True,
         timeout: int = None,
         parse_mode=None,
         reply_markup=None,
     ) -> pyrogram.types.Message:
         """
+
         Args:
-            chat_id (int): Chat ID
-            from_id (List[int], int, optional): Only listening from specific ids or id ( User ID or Chat ID ). Defaults to None.
-            text (str): The question.
-            protect_content (bool, optional): Protect message content. Defaults to None.
-            reply_to_message_id (int, optional): message to reply. Defaults to None.
-            content_filters (List[str], optional): List of filters like: ['text', 'photo'] ( Message type attributes ). Defaults to None.
+            chat_id (int): chat id
+            text (str, optional): Defaults to None.
+            from_id (Union[List[int], int], optional): peer id filters. Defaults to None.
+            filters (List[str], optional): list of Message attributes. Defaults to available_filters.
+            filters_type (int, optional): 1: The client will listen to any message contain one of filters, 2: The client will listen to message contain all of filters. Defaults to 1.
+            protect_content (bool, optional): Defaults to None.
+            reply_to_message_id (int, optional): Defaults to None.
             disable_web_page_preview (bool, optional): Defaults to True.
-            parse_mode (pyrogram.enums.ParseMode, optional): Defaults to None.
+            timeout (int, optional): Time out. Defaults to None.
+            parse_mode (optional): Defaults to None.
             reply_markup (optional): Defaults to None.
 
+        Raises:
+            TimeOut
+
         Returns:
-            pyrogram.types.Message: Message type, with 'output' attribute when you set show_output as True
+            pyrogram.types.Message:
         """
         data = {
                 "from_id": from_id,
                 "filters": filters,
                 "chat_id": chat_id,
+                "filters_type": filters_type
         }
         if data in _cache[self.client.name]['list']: _cache[self.client.name]['list'].remove(data)
         _cache[self.client.name]['list'].append(data)
@@ -99,7 +107,7 @@ class Listener:
             return _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
         return await self.client.loop.run_in_executor(None, ___)
 
-    async def listen_to(self, m: Union[pyrogram.types.CallbackQuery, pyrogram.types.Message], text : str, *args, **kwargs):
+    async def listen_to(self, m: Union[pyrogram.types.CallbackQuery, pyrogram.types.Message], text : str = None,*args, **kwargs):
         if isinstance(m, pyrogram.types.CallbackQuery):
             chat_id = m.message.chat.id
             from_id = m.from_user.id
@@ -120,11 +128,20 @@ class Listener:
                         isinstance(data["from_id"], int) and data["from_id"] == sender.id
                     )
                 ):
-                    for _ in data["filters"]:
-                        if getattr(message, _):
-                            __.append(_)
-                    if not __:
-                        return False
+                    if data["filters_type"] == 1:
+                        for _ in data["filters"]:
+                            if hasattr(message, _) and getattr(message, _):
+                                __.append(_)
+                                break
+                        if not __:
+                            return False
+
+                    if data["filters_type"] == 2:
+                        for _ in data["filters"]:
+                            if hasattr(message, _) and getattr(message, _):
+                                __.append(_)
+                        if __ != data["filters"]:
+                            return False
                     if self.show_output:
                         message.output = _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
                     _cache[self.client.name][json.dumps(data, ensure_ascii=False)]=message
