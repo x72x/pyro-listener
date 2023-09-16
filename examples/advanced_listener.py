@@ -1,5 +1,5 @@
 from pyrogram import Client, filters, idle, types
-from pyrolistener import Listener, exceptions
+from pyrolistener import Listener
 
 app = Client("name")
 app.start()
