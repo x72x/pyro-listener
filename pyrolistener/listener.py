@@ -5,7 +5,7 @@ from typing import List, Union
 from datetime import datetime, timedelta
 
 from pyrogram.handlers import MessageHandler
-from .exceptions import ClientNotStartedYet, ClientAlreadyConnected, TimeOut
+from .exceptions import ClientAlreadyConnected, TimeOut
 
 _cache = {}
 
@@ -23,21 +23,18 @@ class Listener:
             show_output (bool, optional): Insert 'output' attribute to question message. Defaults to True.
 
         Raises:
-            ClientNotStartedYet
             ClientAlreadyConnected
         """
         super().__init__()
 
-        if not client.is_connected:
-            raise ClientNotStartedYet(f"Client [ {client.name} ] Not started yet")
-
         if client.name in _cache:
             raise ClientAlreadyConnected(f"Client [ {client.name} ] Already connected")
 
-        _cache[client.name]={}
-        _cache[client.name]['list']=[]
         self.client = client
         self.show_output = show_output
+        _cache[client.name]={}
+        _cache[client.name]['list']=[]
+
         self.client.add_handler(MessageHandler(self._handler), group=-99)
 
     async def listen(
@@ -98,11 +95,14 @@ class Listener:
         _cache[self.client.name][json.dumps(data, ensure_ascii=False)]=m
         if timeout:
             stamp = (datetime.now() + timedelta(seconds=timeout))
+        else:
+            stamp = None
         def ___():
             while data in _cache[self.client.name]['list']:
-                if timeout:
-                    if datetime.now() > stamp:
-                        raise TimeOut("Time out error")
+                if (timeout) and (datetime.now() > stamp):
+                    del _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
+                    _cache[self.client.name]['list'].remove(data)
+                    raise TimeOut("Time out error")
                 sleep(0)
             return _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
         return await self.client.loop.run_in_executor(None, ___)
