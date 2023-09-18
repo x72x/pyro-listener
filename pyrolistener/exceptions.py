@@ -1,6 +1,4 @@
 
-class ClientNotStartedYet(Exception):
-    pass
 
 class ClientAlreadyConnected(Exception):
     pass
