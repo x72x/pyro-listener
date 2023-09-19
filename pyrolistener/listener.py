@@ -21,9 +21,6 @@ class Listener:
         Args:
             client (pyrogram.Client): Pyrogram Client
             show_output (bool, optional): Insert 'output' attribute to question message. Defaults to True.
-
-        Raises:
-            ClientAlreadyConnected
         """
         super().__init__()
 
