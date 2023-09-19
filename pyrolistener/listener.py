@@ -5,7 +5,7 @@ from typing import List, Union
 from datetime import datetime, timedelta
 
 from pyrogram.handlers import MessageHandler
-from .exceptions import ClientAlreadyConnected, TimeOut
+from .exceptions import TimeOut
 
 _cache = {}
 
@@ -27,9 +27,6 @@ class Listener:
         """
         super().__init__()
 
-        if client.name in _cache:
-            raise ClientAlreadyConnected(f"Client [ {client.name} ] Already connected")
-
         self.client = client
         self.show_output = show_output
         _cache[client.name]={}
@@ -40,6 +37,7 @@ class Listener:
     async def listen(
         self,
         chat_id: int,
+        client: pyrogram.Client = None,
         text: str = None,
         from_id: Union[List[int], int] = None,
         filters: List[str] = available_filters,
@@ -55,6 +53,7 @@ class Listener:
 
         Args:
             chat_id (int): chat id
+            client (pyrogram.Client, optional): Pyrogram Client for Smart Plugins. Default to main client.
             text (str, optional): Defaults to None.
             from_id (Union[List[int], int], optional): peer id filters. Defaults to None.
             filters (List[str], optional): list of Message attributes. Defaults to available_filters.
@@ -81,7 +80,7 @@ class Listener:
         if data in _cache[self.client.name]['list']: _cache[self.client.name]['list'].remove(data)
         _cache[self.client.name]['list'].append(data)
         if text:
-            m = await self.client.send_message(
+            m = await (client or self.client).send_message(
                 chat_id=chat_id,
                 text=text,
                 reply_markup=reply_markup,
@@ -105,18 +104,18 @@ class Listener:
                     raise TimeOut("Time out error")
                 sleep(0)
             return _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
-        return await self.client.loop.run_in_executor(None, ___)
+        return await client.loop.run_in_executor(None, ___)
 
     async def listen_to(self, m: Union[pyrogram.types.CallbackQuery, pyrogram.types.Message], text : str = None,*args, **kwargs):
         if isinstance(m, pyrogram.types.CallbackQuery):
             chat_id = m.message.chat.id
             from_id = m.from_user.id
-            reply_to_message_id = None
+            # reply_to_message_id = None
         elif isinstance(m, pyrogram.types.Message):
             chat_id = m.chat.id
-            from_id = m.from_user.id
-            reply_to_message_id = m.id
-        return await self.listen(chat_id=chat_id, from_id=from_id, text=text, reply_to_message_id=reply_to_message_id, *args, **kwargs)
+            from_id = (m.from_user or m.sender_chat).id
+            # reply_to_message_id = m.id
+        return await self.listen(chat_id=chat_id, client=m._client, from_id=from_id, text=text, *args, **kwargs)
 
     async def _handler(self, client: pyrogram.Client, message: pyrogram.types.Message):
             sender = message.sender_chat or message.from_user
