@@ -101,7 +101,7 @@ class Listener:
                     raise TimeOut("Time out error")
                 sleep(0)
             return _cache[self.client.name][json.dumps(data, ensure_ascii=False)]
-        return await client.loop.run_in_executor(None, ___)
+        return await (client or self.client).loop.run_in_executor(None, ___)
 
     async def listen_to(self, m: Union[pyrogram.types.CallbackQuery, pyrogram.types.Message], text : str = None,*args, **kwargs):
         if isinstance(m, pyrogram.types.CallbackQuery):
