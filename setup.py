@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '2.5'
+VERSION = '2023.9.19'
 DESCRIPTION = 'Pyrogram listener'
 
 # Setting up
