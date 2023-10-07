@@ -14,6 +14,9 @@
     </a>
 </p>
 
+## Badges
+- [![Downloads](https://static.pepy.tech/badge/pyro-listener)](https://pepy.tech/project/pyro-listener)
+
 ## Pyrolistener
 
 > Message listener example
